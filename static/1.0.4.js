@@ -1,5 +1,32 @@
-let stopFlag = false
+let timer 
+let GLOBALfrequencyLength = 0
+let XorShift;
+var n = function() {
+	function t() {}
+	return Object.defineProperty(t, "instance", {
+		get: function() {
+			return this._instance || (this._instance = new t()), this._instance;
+		},
+		enumerable: !1,
+		configurable: !0
+	}), t.prototype.setSeed = function(t) {
+		if (!Array.isArray(t) || 4 !== t.length) throw new TypeError("seed must be an array with 4 numbers");
+		this._state0U = 0 | t[0], this._state0L = 0 | t[1], this._state1U = 0 | t[2], this._state1L = 0 | t[3];
+	}, t.prototype.randomint = function() {
+		var t = this._state0U, e = this._state0L, o = this._state1U, n = this._state1L, i = (n >>> 0) + (e >>> 0), a = o + t + (i / 2 >>> 31) >>> 0, r = i >>> 0;
+		this._state0U = o, this._state0L = n;
+		var c = 0, s = 0;
+		return c = (t ^= c = t << 23 | (-512 & e) >>> 9) ^ o, s = (e ^= s = e << 23) ^ n, 
+		c ^= t >>> 18, s ^= e >>> 18 | (262143 & t) << 14, c ^= o >>> 5, s ^= n >>> 5 | (31 & o) << 27, 
+		this._state1U = c, this._state1L = s, [ a, r ];
+	}, t.prototype.random = function() {
+		var t = this.randomint();
+		return 2.3283064365386963e-10 * t[0] + 2.220446049250313e-16 * (t[1] >>> 12);
+	}, t._instance = null, t;
+}();
+XorShift = n
 $(document).ready(function() {
+	console.log();
 	const fn = (t) => {
 		t = t + 1
 		return new Promise((resolve, reject) => {
@@ -7,61 +34,37 @@ $(document).ready(function() {
 				'icon': 16
 			});
 			var token = $('#token').val();
-			let type = $("input:radio:checked").val()
-			let url = ""
-			if (type == "1") {
-				$.ajax({
-					'cache': true,
-					'type': 'get',
-					'url': "https://cat-match.easygame2021.com/sheep/v1/game/update_user_skin?skin=1&t=" + token,
-					'dataType': 'json',
-					'success': function(result) {
-						layer.closeAll()
-						if (result.data.ts === 0) {
-							$('#content').html('本次通关失败，第' + t + '次');
-						} else {
-							$('#content').html('已经为您刷通关' + t + '次');
-						}
-						resolve(result)
-					},
-					'error': function(err) {
-						layer.closeAll()
-						$('#content').html('通关失败');
-						resolve(result)
-					}
-				});
-			} else {
-				url = "https://cat-match.easygame2021.com/sheep/v1/game/topic_game_over?rank_score=1&rank_state=1&rank_time=359&rank_role=1&skin=1"
-				$.ajax({
-					'cache': true,
-					'type': 'get',
-					'url': url,
-					'data': {
-						't': token,
-					},
-					'dataType': 'json',
-					'success': function(result) {
-						layer.closeAll()
-						$('#content').html('已经为您刷通关' + t + '次');
-						resolve(result)
-					},
-					'error': function(err) {
-						layer.closeAll()
-						$('#content').html('通关失败');
-						resolve(result)
-					}
-				});
-			}
+			let url = "https://cat-match.easygame2021.com/sheep/v1/game/topic_game_over?rank_score=1&rank_state=1&rank_time=359&rank_role=1&skin=1"
+			$.ajax({
+				'cache': true,
+				'type': 'get',
+				'url': url,
+				'data': {
+					't': token,
+				},
+				'dataType': 'json',
+				'success': function(result) {
+					layer.closeAll()
+					$('#content').html('已经为您刷通关' + t + '次');
+					resolve(result)
+				},
+				'error': function(err) {
+					layer.closeAll()
+					$('#content').html('通关失败');
+					resolve(result)
+				}
+			});
 		})
 	};
 
-	const fn2 = (levelNums) => {
+	const fn2 = (levelNums,map_seed_2,mapInfo,mapSeed) => {
 		return new Promise((resolve, reject) => {
 			layer.msg('正在提交首次加入羊群', {
 				'icon': 16
 			});
 			var token = $('#token').val();
-			let MatchPlayInfo = getMatchPlayInfo(levelNums)
+			let MatchPlayInfo = getMatchPlayInfo(levelNums,mapInfo,mapSeed)
+			// let MatchPlayInfo = "CAMiBQi1ARAGIgUItwEQBiIFCLoBEAYiBQiMARAIIgUIrgEQCSIFCKMBEAkiBQiwARAJIgUItgEQDiIFCLsBEA4iBQivARAOIgUIqQEQCyIFCKUBEAsiBQisARALIgUIjgEQByIFCK0BEAciBQi0ARAHIgUIvAEQDCIFCKABEAwiBQikARAMIgQIcRAOIgQIfxAOIgUIkAEQDiIFCKcBEAoiBQiWARAKIgUIgQEQCiIFCIYBEBAiBAhuEBAiBQiiARAOIgQIBBAOIgUIjQEQCCIFCKEBEAgiBQiEARAOIgQIbxAIIgQIcBAOIgUIsgEQAyIFCLEBEAMiBQiSARAE"
 			if (!MatchPlayInfo) {
 				return
 			}
@@ -73,10 +76,12 @@ $(document).ready(function() {
 				'data': {
 					"rank_score": 1,
 					"rank_state": 1,
-					"rank_time": 359, // 通关时间
+					"rank_time": 600, // 通关时间
 					"rank_role": 2,
 					"skin": 1,
-					"MatchPlayInfo": MatchPlayInfo
+					"MatchPlayInfo": MatchPlayInfo,
+					"MapSeed2":map_seed_2,
+					"Version":"0.0.1"
 				},
 				'success': function(result) {
 					layer.closeAll()
@@ -126,6 +131,9 @@ $(document).ready(function() {
 						resolve(0)
 					} else {
 						let map_md5 = result.data.map_md5[1]
+						let map_seed_2 = result.data.map_seed_2
+						let map_seed = result.data.map_seed
+						console.log(map_md5);
 						$.ajax({
 							'type': 'get',
 							'url': "https://cat-match-static.easygame2021.com/maps/" + map_md5 + ".txt",
@@ -139,7 +147,8 @@ $(document).ready(function() {
 										levelNums++
 									})
 								}
-								resolve(levelNums)
+								XorShift.instance.setSeed(map_seed)
+								resolve({levelNums,map_seed_2,result,map_seed})
 							},
 							'error': function(err) {
 								layer.closeAll()
@@ -169,7 +178,7 @@ $(document).ready(function() {
 	 * limit 是每次并行发起多少个请求
 	 * handleFn 就是异步处理函数
 	 */
-	function limitQueueFn(number, limit, handleFn) {
+	 function limitQueueFn(number, limit, handleFn) {
 		console.log(number);
 		if (number < limit) {
 			limit = number
@@ -189,19 +198,17 @@ $(document).ready(function() {
 				// resolve 返回 promise
 				resolve(handleFn(index))
 			}).then(() => {
-				if (stopFlag) {
-					return
-				}
 				if (index < number) {
 					run()
 				}
 			})
 		}
 	};
+
 	$('#get_code').click(async function() {
 		var token = $('#token').val();
 		var frequencyLength = $('#frequency').val();
-		var frequencyLimit = $('#frequencyLimit').val();
+		var frequencyLimit = 1
 		if (token == '') {
 			layer.msg('请输入你的 token', {
 				'icon': 5
@@ -213,26 +220,90 @@ $(document).ready(function() {
 			});
 			return;
 		}
-		layer.msg('开始获取地图数据');
-		let levelNums = await fn3() // 先获取今天多少张卡片
-		if (levelNums === 0) return
-		stopFlag = false
-		let res = await fn2(levelNums) // 先通关一次
-		if (res.err_code === 0 && frequencyLength > 1) { // 通关成功，开始循环刷次数
-			$('#content').html('已经为您刷通关1次');
-			limitQueueFn(Number(frequencyLength - 1), Number(frequencyLimit) || 10, fn)
+		let type = $("input:radio:checked").val()
+		if(type==1){
+			GLOBALfrequencyLength = 0
+			gameOver()
+		}else{
+			limitQueueFn(Number(frequencyLength), Number(frequencyLimit) || 1, fn)
 		}
 	});
 
-	$('#stop_limit').click(function() {
-		stopFlag = true
-	});
+	async function gameOver() {
+		layer.msg('开始获取地图数据');
+		let userInfo = await getPersonInfo()
+		if(userInfo.err_code!=0){
+			layer.msg(userInfo.err_msg, {
+				'icon': 5
+			});
+			return
+		}
+		let {win_count} = userInfo.data
+		$('#content').html('当前次数：'+win_count);
+		let {levelNums,map_seed_2,result,map_seed} = await fn3() // 先获取今天多少张卡片
+		console.log(result);
+		if (levelNums === 0) return
+		let sleepNum = Number($('#frequencyLimit').val())
+		layer.msg('等待'+sleepNum+'秒');
+
+		let time = sleepNum;//倒计的时间
+        //创建定时器
+        let timer = setInterval(async function () {
+            if (time == 0) {
+				//清除定时器效果
+                clearInterval(timer);
+				layer.closeAll()
+				layer.msg('开始本次通关');
+				let res = await fn2(levelNums,map_seed_2,JSON.parse(result),map_seed) // 先通关一次
+				if(res.err_code===0){
+					let userInfo = await getPersonInfo()
+					let New_win_count = userInfo.data.win_count
+					if(New_win_count!==win_count){
+						$('#content').html('当前次数：'+New_win_count);
+						GLOBALfrequencyLength++
+						if(GLOBALfrequencyLength == $('#frequency').val()){
+							layer.msg('通关结束');
+							return
+						}else{
+							layer.msg('本次通关成功，开始下次通关');
+							gameOver()
+						}
+					}else{
+						layer.msg('本次通关失败，结束');
+					}
+				}
+            } else {
+				layer.msg('等待'+sleepNum+'秒，'+"还剩" + time + "秒");
+                time--;
+            }
+        }, 1000);//每隔1s调用一次
+	}
 
 	function generateRandomInteger(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
 
-	function getMatchPlayInfo(levelNums) {
+	function getPersonInfo() {
+		return new Promise((resolve, reject) => {
+			var token = $('#token').val();
+			$.ajax({
+				'cache': true,
+				'type': 'get',
+				'url': "https://cat-match.easygame2021.com/sheep/v1/game/personal_info?t=" + token,
+				'success': function(result) {
+					resolve(result)
+				},
+				'error': function(err) {
+					layer.closeAll()
+					layer.msg('获取个人信息失败');
+					$('#content').html('获取个人信息失败');
+					reject(err)
+				}
+			});
+		})
+	}
+
+	function getMatchPlayInfo(levelNums,mapInfo,mapSeed) {
 		var i = protobuf.Reader,
 			a = protobuf.Writer,
 			r = protobuf.util;
@@ -314,40 +385,82 @@ $(document).ready(function() {
 					return n
 				}, t
 		}()
+
 		var operationList = []
 
-		function addOp(t, e) { //增加操作
-			void 0 === e && (e = -100);
-			// console.log(t);
-			if (t === 0) {
-				var o = {
-					id: t, // 操作卡片的id，从levelData第一层开始按顺序编号
-					time: Date.now() // 操作时间
-				};
-			} else {
-				var o = {
-					id: t, // 操作卡片的id，从levelData第一层开始按顺序编号
-					time: operationList[t - 1].time + generateRandomInteger(500, 2000) // 操作时间
-				};
+		function shuffle(t) {
+			for (var e = t.length - 1; e >= 0; e--) {
+				var o = XorShift.instance.random(), n = Math.floor(o * (e + 1)), a = t[n];
+				t[n] = t[e], t[e] = a;
 			}
-			operationList.push(o)
+			return t;
 		}
 
-		function sleep(delay) {
-			for (var t = Date.now(); Date.now() - t <= delay;);
+		let blockTypeArr = []
+		var t = mapInfo.blockTypeData;
+		for (var e = Object.keys(t).map(function(e) {
+			
+			return {
+				cardType: parseInt(e),
+				cardNum: parseInt(t[e])
+			};
+		}).sort(function(t, e) {
+			return t.cardType - e.cardType;
+		}), o = 0; o < e.length; o++) for (var n = 3 * e[o].cardNum, i = 0; i < n; i++) blockTypeArr.push(e[o].cardType);
+		console.log(blockTypeArr);
+		blockTypeArr = shuffle(blockTypeArr)
+		console.log(blockTypeArr);
+
+		let addBlockFunc = function(t) {
+			if (0 == t.type) {
+				var u = blockTypeArr.pop();
+				t.type = u;
+			}
 		}
-		let range = n => [...Array(n).keys()]
-		for (let i of range(levelNums)) { // 生成了50次操作
-			addOp(i);
-			// sleep(Math.random() * 10); // 模拟操作过程中的等待
+		var levelData = mapInfo.levelData, z = 0;
+        for (var n in levelData) for (var i in levelData[n]) levelData[n][i].cardId = z, z++, addBlockFunc(levelData[n][i]);
+
+		console.log("levelData");
+		console.log(levelData);
+
+		function addOp(t, e) { //增加操作
+			void 0 === e && (e = 0);
+                var o = {
+                    id: t,
+                    color: e
+                };
+                operationList.push(o);
 		}
-		console.log(operationList)
-		for (var u = operationList, p = [], d = 0, h = 0; h < u.length; h++) // 把时间戳转换为两次操作的间隔
+		let ii=0
+		for (let i = 0; i < Object.keys(levelData).length; i++) {
+			let levelMap = levelData[i + 1];
+			levelMap.forEach((item,k) => {
+				// console.log(item);
+				addOp(item.cardId,item.type)
+				ii++
+			})
+		}
+		console.log(JSON.parse(JSON.stringify(operationList)))
+
+		operationList.sort((a,b)=>{
+			if(b.color !== a.color){
+				return b.color - a.color
+			}else{
+				return b.id-a.id
+			}
+		})
+		for (var u = operationList, p = [], h = 0; h < u.length; h++){
+			if(h===160){
+				p.push({
+					chessIndex: -4,
+					timeTag: -4
+				})
+			}
 			p.push({
 				chessIndex: u[h].id,
-				timeTag: 0 == d ? 0 : u[h].time - d
-			}), d = u[h].time;
-		console.log(p)
+				timeTag: u[h].color
+			})
+		}
 		GAMEDAILY = 3
 		GAMETOPIC = 4
 		for (var f = {
@@ -355,9 +468,12 @@ $(document).ready(function() {
 			stepInfoList: p
 		}, y = MatchPlayInfo.create(f), v = MatchPlayInfo.encode(y).finish(), b = "", _ = 0; _ < v.length; _++)
 			b += String.fromCharCode(v[_]); // 序列化
+			console.log(f)
 
 		var data = btoa(b);
 		// console.log(data);
 		return data
 	}
+
+	
 });
